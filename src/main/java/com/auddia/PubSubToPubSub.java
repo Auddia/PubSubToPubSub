@@ -17,64 +17,58 @@
  */
 package com.auddia;
 
+import com.auddia.common.JobInfo;
 import com.auddia.common.PubSubToPubSubOptions;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
-import org.apache.beam.sdk.transforms.MapElements;
-import org.apache.beam.sdk.transforms.PTransform;
-import org.apache.beam.sdk.transforms.SimpleFunction;
-import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
-import org.apache.beam.sdk.values.TypeDescriptor;
-import org.apache.beam.sdk.values.TypeDescriptors;
+import org.apache.beam.sdk.values.PCollectionList;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
  */
 public class PubSubToPubSub {
-    public static class ProcessTopics extends PTransform<PCollection<String>, PCollection<KV<String, String>>> {
-        private String getOutputLocation(String project, String topic) {
-            return String.format("projects/%s/topics/%s", project, topic);
-        }
-
-        private String getInput(String inputProject, String outputProject, String topic) {
-            return String.format(
-                    "projects/%s/subscriptions/%s_%s.sink",
-                    inputProject,
-                    topic,
-                    outputProject
-            );
-        }
-
-        @Override
-        public PCollection<KV<String, String>> expand(PCollection<String> topics) {
-            return topics.apply(
-                    MapElements
-                            .into(TypeDescriptors.kvs(TypeDescriptors.strings(), TypeDescriptors.strings()))
-                            .via((String topic) -> KV.of(
-                                    this.getOutputLocation("input", topic),
-                                    this.getInput("input", "output", topic)
-                            ))
-            );
-        }
+    public static List<String> getTopicList(String topicListLocation) {
+        return Arrays.asList("topic_one",  "topic_two");
     }
 
-    public static class FormatAsTextFn extends SimpleFunction<KV<String, String>, String> {
-        @Override
-        public String apply(KV<String, String> input) {
-            return input.getKey() + ": " + input.getValue();
-        }
+    public static List<JobInfo> getJobInfo(PubSubToPubSubOptions options) {
+        String outputProject = options.getOutputProject().get();
+        List<String> topics = getTopicList(options.getTopicListLocation().get());
+
+        return topics.stream()
+                .map(topic -> new JobInfo(topic, "test_data", outputProject))
+                .collect(Collectors.toList());
     }
 
     static void runPubSubToPubSub(PubSubToPubSubOptions options) {
         Pipeline pipeline = Pipeline.create(options);
 
-        pipeline
-            .apply("GetTopicList", TextIO.read().from(options.getTopicListLocation()))
-            .apply("ProcessTopics", new ProcessTopics())
-            .apply(MapElements.via(new PubSubToPubSub.FormatAsTextFn()))
-            .apply("SinkData", TextIO.write().to("test_sink"));
+        List<JobInfo> jobs = getJobInfo(options);
+
+        // TODO: Validate ordering is consistent with topics array (if not make a PCollection and partition the data)
+        PCollectionList<String> messages = PCollectionList.of(
+                jobs.stream()
+                        .map(jobInfo -> pipeline.apply(
+                                "GetData", TextIO.read().from(jobInfo.getSubscription())
+                        ))
+                        .collect(Collectors.toList())
+        );
+
+        for (int idx = 0; idx < jobs.size(); idx++) {
+            JobInfo info = jobs.get(idx);
+            PCollection<String> message = messages.get(idx);
+
+            message.apply(
+                    "SinkMessages",
+                    TextIO.write().to(info.getTopic())
+            );
+        }
 
         pipeline.run();
     }
