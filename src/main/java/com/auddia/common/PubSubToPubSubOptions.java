@@ -6,7 +6,12 @@ import org.apache.beam.sdk.options.Validation;
 import org.apache.beam.sdk.options.ValueProvider;
 
 public interface PubSubToPubSubOptions extends PipelineOptions {
-    @Description("The project that the topic being outputted to is located")
+    @Description("The project that the topics are being read from")
+    @Validation.Required
+    ValueProvider<String> getInputProject();
+    void setInputProject(ValueProvider<String> value);
+
+    @Description("The project that the topics are being outputted to")
     @Validation.Required
     ValueProvider<String> getOutputProject();
     void setOutputProject(ValueProvider<String> value);

@@ -34,7 +34,8 @@ public class PubSubToPubSub {
     }
 
     public static List<JobInfo> getJobInfo(PubSubToPubSubOptions options) {
-        String inputProject = options.as(DataflowPipelineOptions.class).getProject();
+//        String inputProject = options.as(DataflowPipelineOptions.class).getProject();
+        String inputProject = options.getInputProject().get();
         String outputProject = options.getOutputProject().get();
         List<String> topics = getTopicList(
                 inputProject,
