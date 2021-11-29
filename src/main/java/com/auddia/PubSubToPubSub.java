@@ -5,7 +5,6 @@ import com.auddia.common.PubSubToPubSubOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
-import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage;
@@ -15,48 +14,52 @@ import org.apache.beam.sdk.values.PCollectionList;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
  *
  */
 public class PubSubToPubSub {
-    public static List<String> getTopicList(String project, String bucket, String topicListLocation) {
+    public static Map<String, String> getTopicMap(String project, String bucket, String topicMapLocation) {
         Storage storage = StorageOptions.newBuilder()
                 .setProjectId(project)
                 .build()
                 .getService();
 
-        Blob blob = storage.get(bucket, topicListLocation);
+        Blob blob = storage.get(bucket, topicMapLocation);
         String content = new String(blob.getContent());
 
-        return Arrays.asList(content.split("[\\r\\n]+"));
+        return Arrays.stream(content.split("[\\r\\n]+"))
+                .map(line -> line.split(","))
+                .collect(Collectors.toMap(list -> list[0], list -> list[1]));
     }
 
-    public static List<JobInfo> getJobInfo(PubSubToPubSubOptions options) {
-//        String inputProject = options.as(DataflowPipelineOptions.class).getProject();
-        String inputProject = options.getInputProject().get();
-        String outputProject = options.getOutputProject().get();
-        List<String> topics = getTopicList(
+    public static List<JobInfo> getJobInfo(String inputProject, String outputProject, String topicMapLocation) {
+        Map<String, String> topicMap = getTopicMap(
                 inputProject,
-                String.format("%s-sink", inputProject),
-                options.getTopicListLocation().get()
+                String.format("%s-events", inputProject),
+                String.format("configurations/sink/%s", topicMapLocation)
         );
 
-        return topics.stream()
-                .map(topic -> new JobInfo(topic, inputProject, outputProject))
+        return topicMap.keySet().stream()
+                .map(inputTopic -> new JobInfo(inputTopic, topicMap.get(inputTopic), inputProject, outputProject))
                 .collect(Collectors.toList());
     }
 
     static void runPubSubToPubSub(PubSubToPubSubOptions options) {
         Pipeline pipeline = Pipeline.create(options);
 
-        List<JobInfo> jobs = getJobInfo(options);
+        List<JobInfo> jobs = getJobInfo(
+                options.getInputProject().get(),
+                options.getOutputProject().get(),
+                options.getTopicMapLocation().get()
+        );
 
         PCollectionList<PubsubMessage> messages = PCollectionList.of(
                 jobs.stream()
                     .map(jobInfo -> pipeline.apply(
-                            "GetMessages",
+                            "GetMessagesFromSubscription",
                             PubsubIO.readMessages().fromSubscription(jobInfo.getSubscription())
                         )
                     )
@@ -68,7 +71,7 @@ public class PubSubToPubSub {
             PCollection<PubsubMessage> message = messages.get(idx);
 
             message.apply(
-                    "SinkMessages",
+                    "SinkMessagesToTopic",
                     PubsubIO.writeMessages().to(info.getTopic())
             );
         }

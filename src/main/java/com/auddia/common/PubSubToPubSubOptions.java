@@ -18,6 +18,6 @@ public interface PubSubToPubSubOptions extends PipelineOptions {
 
     @Description("The GCS location of the topic list")
     @Validation.Required
-    ValueProvider<String> getTopicListLocation();
-    void setTopicListLocation(ValueProvider<String> value);
+    ValueProvider<String> getTopicMapLocation();
+    void setTopicMapLocation(ValueProvider<String> value);
 }

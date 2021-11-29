@@ -1,23 +1,25 @@
 package com.auddia.common;
 
 public class JobInfo {
-    private final String topic;
+    private final String inputTopic;
+    private final String outputTopic;
     private final String inputProject;
     private final String outputProject;
 
-    public JobInfo(String topic, String inputProject, String outputProject) {
-        this.topic = topic;
+    public JobInfo(String inputTopic, String outputTopic, String inputProject, String outputProject) {
+        this.inputTopic = inputTopic;
+        this.outputTopic = outputTopic;
         this.inputProject = inputProject;
         this.outputProject = outputProject;
     }
 
     public String getSubscription() {
 //        return String.format("%s/%s.input", inputProject, topic);
-        return String.format("projects/%s/subscriptions/%s_%s.sink", inputProject, topic, outputProject);
+        return String.format("projects/%s/subscriptions/%s_%s.sink", inputProject, inputTopic, outputProject);
     }
 
     public String getTopic() {
 //        return String.format("%s/%s/%s.out", inputProject, outputProject, topic);
-        return String.format("projects/%s/topics/%s", outputProject, topic);
+        return String.format("projects/%s/topics/%s", outputProject, outputTopic);
     }
 }
