@@ -5,6 +5,7 @@ import com.auddia.common.PubSubToPubSubOptions;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
+import org.apache.beam.runners.dataflow.options.DataflowPipelineOptions;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO;
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubMessage;
@@ -51,7 +52,7 @@ public class PubSubToPubSub {
         Pipeline pipeline = Pipeline.create(options);
 
         List<JobInfo> jobs = getJobInfo(
-                options.getInputProject().get(),
+                options.as(DataflowPipelineOptions.class).getProject(),
                 options.getOutputProject().get(),
                 options.getTopicMapLocation().get()
         );

@@ -14,12 +14,10 @@ public class JobInfo {
     }
 
     public String getSubscription() {
-//        return String.format("%s/%s.input", inputProject, topic);
         return String.format("projects/%s/subscriptions/%s_%s.sink", inputProject, inputTopic, outputProject);
     }
 
     public String getTopic() {
-//        return String.format("%s/%s/%s.out", inputProject, outputProject, topic);
         return String.format("projects/%s/topics/%s", outputProject, outputTopic);
     }
 }
