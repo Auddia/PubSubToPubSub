@@ -38,13 +38,18 @@ fi
 
 
 # Source the common variables from the bin
-TEMPLATE_NAME=$PIPELINE"_topic_sink_version_"$VERSION$(date +"-%Y-%m-%d")
-BUCKET=$PROJECT"-events"
+TEMPLATE_NAME=$PIPELINE"_to_"$OUTPUT_PROJECT"_topic_sink_version_"$VERSION$(date +"-%Y-%m-%d")
+BUCKET=$INPUT_PROJECT"-events"
 NAME=$(echo $PIPELINE | tr "_" -)
 
-if [ $PROJECT = "cfr" ]
+if [ $INPUT_PROJECT = "cfr" ]
 then
-    PROJECT="cfr-projects"
+    INPUT_PROJECT="cfr-projects"
+fi
+
+if [ $OUTPUT_PROJECT = "cfr" ]
+then
+    OUTPUT_PROJECT="cfr-projects"
 fi
 
 
@@ -55,9 +60,10 @@ gradle clean execute \
                  --jobName=topic-sink-${NAME}
                  --templateLocation=gs://$BUCKET/dataflow/templates/$TEMPLATE_NAME \
                  --gcpTempLocation=gs://$BUCKET/dataflow/temp \
+                 --stagingLocation=gs://$BUCKET/dataflow/staging/ \
                  --project=$INPUT_PROJECT \
                  --outputProject=$OUTPUT_PROJECT \
-                 --topicMapLocation=$PIPELINE"
+                 --topicMapLocation=$PIPELINE.txt"
 
 popd || exit
 

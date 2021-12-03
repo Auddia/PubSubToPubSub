@@ -13,8 +13,16 @@ public class JobInfo {
         this.outputProject = outputProject;
     }
 
+    public String getSubscriptionName() {
+        return String.format("%s_%s.df_sink", inputTopic, outputProject);
+    }
+
+    public String getOutputTopicName(){
+        return outputTopic;
+    }
+
     public String getSubscription() {
-        return String.format("projects/%s/subscriptions/%s_%s.sink", inputProject, inputTopic, outputProject);
+        return String.format("projects/%s/subscriptions/%s_%s.df_sink", inputProject, inputTopic, outputProject);
     }
 
     public String getTopic() {

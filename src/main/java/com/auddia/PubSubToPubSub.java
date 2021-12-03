@@ -60,7 +60,7 @@ public class PubSubToPubSub {
         PCollectionList<PubsubMessage> messages = PCollectionList.of(
                 jobs.stream()
                     .map(jobInfo -> pipeline.apply(
-                            "GetMessagesFromSubscription",
+                            String.format("GetMessagesFromSubscription%s", jobInfo.getSubscriptionName()),
                             PubsubIO.readMessages().fromSubscription(jobInfo.getSubscription())
                         )
                     )
@@ -72,7 +72,7 @@ public class PubSubToPubSub {
             PCollection<PubsubMessage> message = messages.get(idx);
 
             message.apply(
-                    "SinkMessagesToTopic",
+                    String.format("SinkMessagesToTopic%s", info.getOutputTopicName()),
                     PubsubIO.writeMessages().to(info.getTopic())
             );
         }
