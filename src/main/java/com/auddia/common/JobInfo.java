@@ -22,7 +22,7 @@ public class JobInfo {
     }
 
     public String getSubscription() {
-        return String.format("projects/%s/subscriptions/%s_%s.df_sink", inputProject, inputTopic, outputProject);
+        return String.format("projects/%s/subscriptions/%s.%s_subscription", inputProject, inputTopic, outputProject);
     }
 
     public String getTopic() {
