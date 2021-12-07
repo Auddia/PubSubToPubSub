@@ -6,13 +6,13 @@ import org.apache.beam.sdk.options.Validation;
 import org.apache.beam.sdk.options.ValueProvider;
 
 public interface PubSubToPubSubOptions extends PipelineOptions {
-    @Description("The project that the topic being outputted to is located")
+    @Description("The project that the topics are being outputted to")
     @Validation.Required
     ValueProvider<String> getOutputProject();
     void setOutputProject(ValueProvider<String> value);
 
     @Description("The GCS location of the topic list")
     @Validation.Required
-    ValueProvider<String> getTopicListLocation();
-    void setTopicListLocation(ValueProvider<String> value);
+    ValueProvider<String> getTopicMapLocation();
+    void setTopicMapLocation(ValueProvider<String> value);
 }
