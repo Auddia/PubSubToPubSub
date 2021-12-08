@@ -14,7 +14,7 @@ public class JobInfo {
     }
 
     public String getSubscriptionName() {
-        return String.format("%s_%s.df_sink", inputTopic, outputProject);
+        return String.format("%s.%s_subscription", inputTopic, outputProject);
     }
 
     public String getOutputTopicName(){
